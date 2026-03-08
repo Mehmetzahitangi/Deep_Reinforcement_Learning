@@ -15,15 +15,16 @@ import ale_py
 DEFAULT_ENV_NAME = "ALE/Pong-v5"
 MEAN_REWARD_BOUND = 19.0
 
-GAMMA = 0.99 # Bellman Approx
+GAMMA = 0.99 # Bellman Approx. Gelecek ödüllerin değeri. Pongda sayı almak uzun sürdüğü için uzağı görmeliyiz. Bu yüzden yüksek değer verdik. 
 BATCH_SIZE = 32 # Replay Buffer'dan alınan batch sayısı
 REPLAY_SIZE = 10000 # max capacity
-REPLAY_START_SIZE = 10000 # Replay Buffer Frame Sayısı
+REPLAY_START_SIZE = 10000 # 10.000 adım boyunca sadece etrafa bakar, ardından eğitime başlar.
 LEARNING_RATE = 1e-4 
-SYNC_TARGET_FRAMES = 1000 # Eğitim modelinden Target modele ağırlıkların ne sıklıkla alınacağını belirler
+SYNC_TARGET_FRAMES = 1000 # Eğitim modelinden Target modele ağırlıkların ne sıklıkla alınacağını belirler, yani Target Network ne sıklıkla güncelleneceğidir
 
+# Keşif - Sömürü Dengesi
 EPSILON_DECAY_LAST_FRAME = 150000
-EPSILON_START = 1.0 # Tüm eylemlerin rastgele seçilmesine yardım eder
+EPSILON_START = 1.0 # == %100. Tüm eylemlerin rastgele seçilmesine yardım eder 
 EPSILON_FINAL = 0.01 # 150000 frame boyunce epsilon 0.01'e düşürülür
 
 gym.register_envs(ale_py)
@@ -65,9 +66,9 @@ class Agent:
     def play_step(self, net, epsilon=0.0, device="cpu"):
         done_reward =None
 
-        if np.random.random() < epsilon:
+        if np.random.random() < epsilon: # Keşif
             action = self.env.action_space.sample()
-        else:
+        else: # Sömürü
             state_a = np.array([self.state])
             state_v = torch.tensor(state_a).to(device)
             q_vals_v = net(state_v)
@@ -96,20 +97,20 @@ def calc_loss(batch, net, tgt_net, device="cpu"):
     next_states_v = torch.tensor(np.array(
         next_states)).to(device)
     actions_v = torch.tensor(actions).to(device)
-    rewards_v = torch.tensor(rewards).to(device)
+    rewards_v = torch.tensor(rewards).to(device) # Gerçek ödül
     done_mask = torch.BoolTensor(dones).to(device)
 
-    state_action_values = net(states_v).gather(
-        1, actions_v.unsqueeze(-1)).squeeze(-1)
-    with torch.no_grad():
+    state_action_values = net(states_v).gather(1, actions_v.unsqueeze(-1)).squeeze(-1) # Hesaplanan tüm değerler arasından sadece bizim yaptığımız aksiyonun çekip alır, bu mevcut tahminimizdir
+
+    with torch.no_grad(): # DQN'de next state'e asıl ağ ile değil Target Network ile bakarız, Hedef ağın tahmin ettiği en yüksek değeri alırız. Eğer oyun o adımda bittiyse (done_mask), gelecekte ödül yoktur, değeri sıfırlarız.
         next_state_values = tgt_net(next_states_v).max(1)[0]
         next_state_values[done_mask] = 0.0
         next_state_values = next_state_values.detach()
 
-    expected_state_action_values = next_state_values * GAMMA + \
-                                   rewards_v
+
+    expected_state_action_values = next_state_values * GAMMA + rewards_v 
     return nn.MSELoss()(state_action_values,
-                        expected_state_action_values)
+                        expected_state_action_values) # Tahminimiz ile Olması gereken arasındaki fark
 
 
 if __name__ == "__main__":
@@ -147,7 +148,8 @@ if __name__ == "__main__":
         epsilon = max(EPSILON_FINAL, EPSILON_START -
                       frame_idx / EPSILON_DECAY_LAST_FRAME)
 
-        reward = agent.play_step(net, epsilon, device=device)
+        reward = agent.play_step(net, epsilon, device=device) # oyunda 1 frame ilerler ve buffer'a atar. Epsilonu yavaşça düşürür
+
         if reward is not None:
             total_rewards.append(reward)
             speed = (frame_idx - ts_frame) / (time.time() - ts)
@@ -175,14 +177,14 @@ if __name__ == "__main__":
                 print("Solved in %d frames!" % frame_idx)
                 break
 
-        if len(buffer) < REPLAY_START_SIZE:
+        if len(buffer) < REPLAY_START_SIZE: # Buffer dolana kadar (10.000 frame) ağa hiç dokunulmaz
             continue
 
-        if frame_idx % SYNC_TARGET_FRAMES == 0:
+        if frame_idx % SYNC_TARGET_FRAMES == 0: # Her 1000 adımda bir, asıl ağın (net) ağırlıkları Hedef Ağa kopyalanır. Hedefin sürekli hareket etmesini önler, öğrenmeyi stabilize eder
             tgt_net.load_state_dict(net.state_dict())
 
         optimizer.zero_grad()
-        batch = buffer.sample(BATCH_SIZE)
+        batch = buffer.sample(BATCH_SIZE) # Buffer'dan rastgele 32 adet tecrübe (BATCH_SIZE) çekilir.
         loss_t = calc_loss(batch, net, tgt_net, device=device)
         loss_t.backward()
         optimizer.step()

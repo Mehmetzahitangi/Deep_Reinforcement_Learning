@@ -2,6 +2,8 @@ import cv2
 import gymnasium as gym
 import numpy as np
 import collections
+""" DeepMind Makalesinde Yapılan Preprocessing İşlemleri.  
+Ham Atari oyunları yapay zeka için çok gürültülü, çok hızlı ve çok fazla gereksiz veri içerdiği için bu işlemleri yapma gereği duyuyoruz."""
 
 class FireResetEnv(gym.Wrapper):
     def __init__(self, env=None):
