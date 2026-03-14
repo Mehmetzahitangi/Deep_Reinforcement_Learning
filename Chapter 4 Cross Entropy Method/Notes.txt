@@ -1,0 +1,34 @@
+Buradaki yield ifadesi, fonksiyonu normal bir fonksiyondan bir Generator (Üreteç) fonksiyonuna dönüştürüyor.
+
+Peki, Reinforcement Learning (RL) bağlamında tam olarak ne yapıyor? İşte adım adım açıklaması:
+
+1. Bellek Tasarrufu (Sonsuz Veri Akışı)
+RL eğitimlerinde genellikle binlerce, hatta milyonlarca veri örneğiyle çalışırız. Eğer yield yerine return kullansaydın, tüm eğitim verisinin belleğe (RAM) dolmasını beklemek zorunda kalırdın. yield ise:
+
+Veriyi "toptan" değil, batch (paket) hazır oldukça verir.
+
+Bellekte sadece o anki batch_size kadar veri tutulur.
+
+Fonksiyon "duraklatılır", veri dışarı gönderilir ve ana döngü tekrar veri istediğinde fonksiyon kaldığı yerden (değişkenlerin durumunu koruyarak) devam eder.
+
+2. "Dur ve Devam Et" Mekanizması
+Kodun akışını şöyle düşünebilirsin:
+
+while True döngüsü içinde bölümler (episodes) oynanır.
+
+batch listesi dolduğunda (len(batch) == batch_size), yield batch satırı çalışır.
+
+Fonksiyon o noktada donar. Kontrolü, bu fonksiyonu çağıran dış döngüye (muhtemelen eğitim döngüsü) bırakır.
+
+Dış döngü o paketi alıp sinir ağını eğitir.
+
+Eğitme işlemi bitip dış döngü bir sonraki paketi istediğinde, fonksiyon donduğu yerden çözülür, batch = [] yapar ve yeni verileri toplamaya başlar.
+
+3. Gerçek Zamanlı Eğitim
+RL'de "On-Policy" yöntemlerde (Cross-Entropy gibi), ajanın o anki politikasıyla veri toplaması ve hemen ardından eğitilmesi gerekir. yield sayesinde:
+
+Ajan veri toplar -> yield ile dışarı atar -> Sinir ağı güncellenir -> Ajan güncellenmiş ağ ile veri toplamaya devam eder.
+Bu, sürekli ve dinamik bir döngü sağlar.
+
+Kodundaki Küçük Bir Detay
+Senin kodun sonsuz bir döngü (while True). Eğer return kullansaydın, fonksiyonun sonuna asla ulaşamayacağı için hiçbir zaman veri alamazdın. yield sayesinde bu fonksiyon sonsuza kadar veri üreten bir "musluk" haline geliyor.

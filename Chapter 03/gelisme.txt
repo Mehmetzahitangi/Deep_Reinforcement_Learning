@@ -1,0 +1,5 @@
+# Source - https://stackoverflow.com/a/76150352
+# Posted by KSs, modified by community. See post 'Timeline' for change history
+# Retrieved 2026-02-23, License - CC BY-SA 4.0
+
+pip install "gymnasium[atari, accept-rom-license]"

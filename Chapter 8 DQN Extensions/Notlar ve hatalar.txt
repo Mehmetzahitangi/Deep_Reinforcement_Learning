@@ -1,0 +1,46 @@
+01_dqn_basics = DQN
+02_dqn_n_steps = N-step DQN in the paper Learning to Predict by the Methods of Temporal Differences, by Richard Sutton ([2] Sutton, 1988)
+03_dqn_double =  Deep Reinforcement Learning with Double Q-Learning ([3] van Hasselt, Guez, and Silver, 2015)
+04_dqn_noisy_net = Noisy Networks for Exploration ([4] Fortunato and others, 2017)
+
+
+--------------------------------------------
+HATA 1:
+2026-03-14 11:12:57.484762: I tensorflow/core/util/port.cc:153 oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-03-14 11:12:59.918535: I tensorflow/core/util/port.cc:153 oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+A.L.E: Arcade Learning Environment (version 0.8.1+53f58b7)
+[Powered by Stella]
+ERROR:ignite.engine.engine.Engine:Current run is terminating due to exception: Input type (unsigned char) and bias type (float) should be the same
+ERROR:ignite.engine.engine.Engine:Engine run is terminating due to exception: Input type (unsigned char) and bias type (float) should be the same
+
+RuntimeError: Input type (unsigned char) and bias type (float) should be the same
+**********************************************
+Çözüm 1: 
+Bu hata aslında bir yazılım eksikliği değil, PTAN kütüphanesinin RAM (Bellek) tasarrufu yapmak için kullandığı bir mühendislik hilesinin yan etkisi.
+Eski kodumuzda (PTAN kullanmadan önce) ortamı sarmalarken en sona ScaledFloatFrame adında bir wrapper ekliyorduk. Bu wrapper pikselleri 255'e bölerek 0.0 ile 1.0 arasına sıkıştırıyor ve float32 yapıyordu.
+
+Ancak PTAN'ın kullandığı wrap_dqn(env) metodu bunu kasten yapmaz. Görüntüleri 0-255 arası tam sayılar (uint8) olarak bırakır.
+
+Sebebi tamamen donanımsaldır: 1 milyon karelik devasa bir tecrübe havuzunu (Replay Buffer) float32 olarak RAM'de tutmaya kalkarsan yaklaşık 28 GB RAM harcarsın ve bilgisayarın çöker. Ancak uint8 olarak tutarsan sadece 7 GB yer kaplar!
+
+Çözüm: Dönüşümü Ağa Bırakmak
+Veriler RAM'de ve tecrübe havuzunda ufak boyutlu uint8 olarak kalmalı, sadece ekran kartının içine girip sinir ağının işlemden geçeceği o son saniyede float tipine dönüştürülmelidir.
+
+Bunu yapmak için lib/dqn_model.py dosyanı aç ve DQN sınıfının içindeki forward fonksiyonunu şu şekilde güncelle:
+
+Eski Hatalı Kod:
+    def forward(self, x):
+        conv_out = self.conv(x).view(x.size()[0], -1)
+        return self.fc(conv_out)
+
+Yeni Doğru Kod:
+    def forward(self, x):
+        # 1. Gelen uint8 matrisi float'a çevirip 0-1 arasına sıkıştırıyoruz
+        normalized_x = x.float() / 255.0 
+        
+        # 2. İşleme artık bu dönüştürülmüş veriyle devam ediyoruz
+        conv_out = self.conv(normalized_x).view(normalized_x.size()[0], -1)
+        return self.fc(conv_out)
+
+Böylelikle ajan hem minimum RAM tüketecek hem de PyTorch'un istediği formata uymuş olacak.
+--------------------------------------------

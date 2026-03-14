@@ -122,11 +122,11 @@ class BufferWrapper(gym.ObservationWrapper):
         return self.buffer
 
 
-def make_env(env_name):
+def make_env(env_name, render_mode=None):
     if not env_name.startswith("ALE/"):
         env_name = f"ALE/{env_name}"
     print(env_name)
-    env = gym.make(env_name)
+    env = gym.make(env_name, render_mode=render_mode)
     env = MaxAndSkipEnv(env)
     env = FireResetEnv(env)
     env = ProcessFrame84(env)

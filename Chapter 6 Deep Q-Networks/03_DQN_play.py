@@ -5,12 +5,13 @@ import argparse
 import numpy as np
 
 import torch
-
+import ale_py
 from lib import wrappers
 from lib import dqn_model
 
 import collections
 
+gym.register_envs(ale_py)
 DEFAULT_ENV_NAME = "ALE/Pong-v5"
 FPS = 25
 
@@ -29,7 +30,8 @@ if __name__ == "__main__":
                         action='store_false')
     args = parser.parse_args()
 
-    env = wrappers.make_env(args.env)
+    render_mode = "rgb_array" if args.record else None
+    env = wrappers.make_env(args.env, render_mode=render_mode)
     if args.record:
         env = gym.wrappers.RecordVideo(env, video_folder=args.record)
     net = dqn_model.DQN(env.observation_space.shape,
@@ -43,7 +45,7 @@ if __name__ == "__main__":
 
     while True:
         start_ts = time.time()
-        if args.vis:
+        if args.vis and not args.record:
             env.render()
         state_v = torch.tensor(np.array([state])) # O anki state'i tensor'a çevirip ağa veririz.
         q_vals = net(state_v).data.numpy()[0] # Ağ, olası 6 tuş için 6 farklı Q-değeri döndürür
@@ -61,4 +63,4 @@ if __name__ == "__main__":
     print("Total reward: %.2f" % total_reward)
     print("Action counts:", c)
     if args.record:
-        env.env.close()
+        env.close()

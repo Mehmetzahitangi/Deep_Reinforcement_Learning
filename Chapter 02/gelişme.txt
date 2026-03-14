@@ -1,0 +1,8 @@
+gym versiyonu çok geride
+
+pip install gymnasium yükle 
+
+görüntü alması için:
+pip install moviepy
+pip install "gymnasium[classic-control]"
+hala olmazsa ffmpeg kurulumu yap
