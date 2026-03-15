@@ -71,7 +71,7 @@ def calc_loss_prio(batch, batch_weights, net, tgt_net, gamma, device="cpu"):
 
 
 if __name__ == "__main__":
-    random.seed(common.SEED)
+    random.seed(common.SEED) 
     torch.manual_seed(common.SEED)
     params = common.HYPERPARAMS['pong']
     parser = argparse.ArgumentParser()

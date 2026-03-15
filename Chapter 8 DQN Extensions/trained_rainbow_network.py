@@ -12,7 +12,7 @@ env = ptan.common.wrappers.wrap_dqn(env)
 
 # Videolar "video_klasoru" içine kaydedilecek.
 env = gym.wrappers.RecordVideo(env, video_folder="video_klasoru", name_prefix="rainbow_sampiyon")
-
+ 
 
 # Eğitirken kullanılan mimarinin aynısı olmak zorunda
 net = dqn_extra.RainbowDQN(env.observation_space.shape, env.action_space.n)
