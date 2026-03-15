@@ -111,3 +111,5 @@ if __name__ == "__main__":
     engine = Engine(process_batch)
     common.setup_ignite(engine, params, exp_source, NAME)
     engine.run(common.batch_generator(buffer, params.replay_initial, params.batch_size))
+    torch.save(net.state_dict(), "rainbow_pong_model.dat")
+    print("Model başarıyla rainbow_pong_model.dat olarak kaydedildi!")
