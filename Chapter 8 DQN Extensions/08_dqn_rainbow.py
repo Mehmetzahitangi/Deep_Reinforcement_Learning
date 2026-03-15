@@ -75,8 +75,7 @@ if __name__ == "__main__":
     torch.manual_seed(common.SEED)
     params = common.HYPERPARAMS['pong']
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cuda", default=False,
-                        action="store_true", help="Enable cuda")
+    parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
     args = parser.parse_args()
     device = torch.device("cuda" if args.cuda else "cpu")
 
@@ -99,9 +98,11 @@ if __name__ == "__main__":
         loss_v, sample_prios = calc_loss_rainbow(batch, batch_weights, net, tgt_net.target_model, gamma=params.gamma**N_STEPS, device=device) # calc_loss_prio, Ajan N_STEPS adım sonrasına baktığı için gamma=params.gamma**N_STEPS,
         loss_v.backward()
         optimizer.step()
+
         buffer.update_priorities(batch_indices, sample_prios)
         if engine.state.iteration % params.target_net_sync == 0:
             tgt_net.sync()
+
         return {
             "loss": loss_v.item(),
             "beta": buffer.update_beta(engine.state.iteration),
