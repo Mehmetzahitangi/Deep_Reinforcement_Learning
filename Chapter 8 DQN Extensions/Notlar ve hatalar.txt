@@ -2,8 +2,10 @@
 02_dqn_n_steps = N-step DQN in the paper Learning to Predict by the Methods of Temporal Differences, by Richard Sutton ([2] Sutton, 1988)
 03_dqn_double =  Deep Reinforcement Learning with Double Q-Learning ([3] van Hasselt, Guez, and Silver, 2015)
 04_dqn_noisy_net = Noisy Networks for Exploration ([4] Fortunato and others, 2017)
-
-
+05_dqn_prio_replay =  2015 in the paper Prioritized Experience Replay ([7] Schaul and others, 2015)
+** Prioritized Replay Buffer sistemi mükemmeldir ancak Numpy tabanlı olduğu için, çok devasa kapasiteli buffer'larda biraz yavaş çalışabilir, bu yüzden genelde Segment Tree adı verilen C++ tabanlı özel veri yapılarıyla hızlandırılır
+06_dqn_dueling = Dueling Network Architectures for Deep Reinforcement Learning ([8] Wang et al., 2015)
+07_dqn_distrib = A Distributional Perspective on Reinforcement Learning ([9] Bellemare, Dabney, and Munos, 2017)
 --------------------------------------------
 HATA 1:
 2026-03-14 11:12:57.484762: I tensorflow/core/util/port.cc:153 oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
